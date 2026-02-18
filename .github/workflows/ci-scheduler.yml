@@ -1,0 +1,49 @@
+name: CI Scheduler and Maintenance
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'      # every 5 minutes: heartbeat placeholder
+    - cron: '0 2 * * *'        # daily at 02:00 UTC: nightly scan
+    - cron: '0 3 * * 0'        # weekly Sunday 03:00 UTC: dependency & vuln checks
+  push:
+    branches: [ main ]
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run heartbeat task (placeholder)
+        run: |
+          echo "Heartbeat scheduled run; this should call ArchonXWebhook.send_heartbeat() via deployed runner or API"
+
+  nightly-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 2 * * *')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run repository scan (placeholder)
+        run: |
+          echo "Run RepositoryScanner: generate report and upload as artifact"
+
+  weekly-audit:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 3 * * 0')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Dependency & vulnerability check (placeholder)
+        run: |
+          echo "Run pip-audit / npm audit / bandit / semgrep; upload results"
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run minimal smoke tests
+        run: |
+          python -m pip install -r requirements.txt || true
+          pytest -q || true

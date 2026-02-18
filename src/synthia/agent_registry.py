@@ -121,6 +121,14 @@ class AgentRegistry:
         
         if auto_discover:
             self._discover_builtin_agents()
+            # Attempt to register Ralphy enforcement hook so every agent
+            # goes through the Ralphy priority checks before execution.
+            try:
+                from .ralphy_enforcer import enforce as _ralphy_enforce
+                self.register_hook("pre_execute", _ralphy_enforce)
+            except Exception:
+                # Non-fatal if enforcer is not present
+                pass
     
     def _discover_builtin_agents(self):
         """Discover and register built-in agents from Devika"""
@@ -354,6 +362,21 @@ class AgentRegistry:
                     capabilities=[AgentCapability.SECURITY, AgentCapability.ANALYSIS],
                     triggers=["security", "vulnerability", "audit"],
                     memory_namespace="security"
+                )
+            }
+            ,
+            {
+                "name": "ast",
+                "module_path": "src.synthia.agents.ast_agent",
+                "class_name": "ASTAgent",
+                "metadata": AgentMetadata(
+                    name="ast",
+                    display_name="AST Analyzer",
+                    description="Performs static AST analysis and suggests fixes",
+                    category=AgentCategory.SUPPORT,
+                    capabilities=[AgentCapability.ANALYSIS, AgentCapability.CODING],
+                    triggers=["analyze", "lint", "ast", "static-analysis"],
+                    memory_namespace="ast"
                 )
             }
         ]

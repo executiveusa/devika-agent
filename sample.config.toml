@@ -42,3 +42,13 @@ DCG_ENABLED = "true"
 MS_BINARY = ""
 # Path to local mdwb (markdown_web_browser) CLI binary; leave empty to disable
 MDWB_BINARY = ""
+
+# Clawbot / Flywheel integration
+CLAW_REPO_URL = "https://github.com/executiveusa/clawdbot-Whatsapp-agent.git"
+CLAW_HEART_PATH = "src/synthia/claw/heart.json"
+CLAW_SOUL_PATH = "src/synthia/claw/soul.json"
+
+# Ralphy / Flywheel references
+RALPHY_REPO_URL = "https://github.com/michaelshimeles/ralphy.git"
+FLYWHEEL_SETUP_URL = "https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup.git"
+AGENT_FLYWHEEL_SITE = "https://agent-flywheel.com/"
