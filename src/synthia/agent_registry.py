@@ -379,6 +379,21 @@ class AgentRegistry:
                     memory_namespace="ast"
                 )
             }
+            ,
+            {
+                "name": "brenner",
+                "module_path": "src.synthia.skills.brenner_skill.brenner_skill",
+                "class_name": "BrennerSkill",
+                "metadata": AgentMetadata(
+                    name="brenner",
+                    display_name="Brenner Skill",
+                    description="Bridge to the Brenner Bot deep-reasoning service (simulated by default)",
+                    category=AgentCategory.DOMAIN,
+                    capabilities=[AgentCapability.ANALYSIS],
+                    triggers=["brenner:deepreason", "brenner"],
+                    memory_namespace="brenner"
+                )
+            }
         ]
         
         for agent_def in builtin_agents:
