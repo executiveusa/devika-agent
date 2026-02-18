@@ -1,6 +1,7 @@
 from jinja2 import Environment, BaseLoader
 
 from src.llm import LLM
+from src.integrations.ms_client import ms_client
 
 PROMPT = open("src/agents/planner/prompt.jinja2").read().strip()
 
@@ -66,6 +67,13 @@ class Planner:
         return result    
 
     def execute(self, prompt: str, project_name: str) -> str:
-        prompt = self.render(prompt)
-        response = self.llm.inference(prompt, project_name)
+        # Fetch relevant skills from ms (no-op if ms not installed)
+        skills = ms_client.search_skills(prompt[:120])
+        skill_context = ""
+        if skills:
+            skill_context = "\n\nRelevant skills available:\n" + "\n".join(
+                [s.get("title", "") + ": " + s.get("summary", "") for s in skills[:3]]
+            )
+        full_prompt = self.render(prompt + skill_context)
+        response = self.llm.inference(full_prompt, project_name)
         return response

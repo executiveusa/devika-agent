@@ -32,3 +32,13 @@ LOG_PROMPTS = "false"
 
 [TIMEOUT]
 INFERENCE = 60
+
+[FEATURES]
+# Enable/disable ACIP prompt-injection checks (true/false)
+ACIP_ENABLED = "true"
+# Enable/disable Destructive Command Guard on all shell commands
+DCG_ENABLED = "true"
+# Path to local ms (Meta Skill) CLI binary; leave empty to disable
+MS_BINARY = ""
+# Path to local mdwb (markdown_web_browser) CLI binary; leave empty to disable
+MDWB_BINARY = ""

@@ -11,6 +11,7 @@ from src.llm import LLM
 from src.state import AgentState
 from src.project import ProjectManager
 from src.services.utils import retry_wrapper, validate_responses
+from src.sandbox.dcg_wrapper import dcg
 
 PROMPT = open("src/agents/runner/prompt.jinja2", "r").read().strip()
 RERUNNER_PROMPT = open("src/agents/runner/rerunner.jinja2", "r").read().strip()
@@ -79,6 +80,19 @@ class Runner:
         retries = 0
         
         for command in commands:
+            # Gate every command through the Destructive Command Guard (if enabled)
+            from src.config import Config as _Cfg
+            if _Cfg().get_dcg_enabled():
+                dcg_result = dcg.check_command(command)
+                if dcg_result["allowed"] == "no":
+                    new_state = AgentState().new_state()
+                    new_state["internal_monologue"] = "DCG blocked a dangerous command."
+                    new_state["terminal_session"]["title"] = "DCG Block"
+                    new_state["terminal_session"]["command"] = command
+                    new_state["terminal_session"]["output"] = f"Blocked: {dcg_result['reason']}"
+                    AgentState().add_to_current_state(project_name, new_state)
+                    continue
+
             command_set = command.split(" ")
             command_failed = False
             

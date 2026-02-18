@@ -92,17 +92,21 @@ class LLM:
 
     def inference(self, prompt: str, project_name: str) -> str:
         # Run ACIP checks before sending the prompt to any model.
-        try:
-            acip_result = acip.check_prompt(prompt)
-        except Exception:
-            acip_result = {"allowed": True, "verdict": "error_checking", "sanitized": prompt}
+        if config.get_acip_enabled():
+            try:
+                acip_result = acip.check_prompt(prompt)
+            except Exception:
+                acip_result = {"allowed": True, "verdict": "error_checking", "sanitized": prompt}
 
-        if not acip_result.get("allowed", False):
-            emit_agent("info", {"type": "error", "message": "Prompt blocked by ACIP: " + acip_result.get("verdict", "blocked")})
-            return "[ACIP] Prompt blocked by security policy."
+            if not acip_result.get("allowed", False):
+                emit_agent("info", {"type": "error", "message": "Prompt blocked by ACIP: " + acip_result.get("verdict", "blocked")})
+                return "[ACIP] Prompt blocked by security policy."
 
-        # Use sanitized prompt if ACIP provided one
-        prompt_to_send = acip_result.get("sanitized") or prompt
+            # Use sanitized prompt if ACIP provided one
+            prompt_to_send = acip_result.get("sanitized") or prompt
+        else:
+            prompt_to_send = prompt
+
         self.update_global_token_usage(prompt_to_send, project_name)
 
         model_enum, model_name = self.model_enum(self.model_id)
@@ -129,7 +133,7 @@ class LLM:
             model = model_mapping[model_enum]
             
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(model.inference, model_name, prompt)
+                future = executor.submit(model.inference, model_name, prompt_to_send)
                 try:
                     while True:
                         elapsed_time = time.time() - start_time

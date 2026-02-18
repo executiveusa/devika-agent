@@ -111,6 +111,18 @@ class Config:
     def get_timeout_inference(self):
         return self.config["TIMEOUT"]["INFERENCE"]
 
+    def get_acip_enabled(self) -> bool:
+        return self.config.get("FEATURES", {}).get("ACIP_ENABLED", "true") == "true"
+
+    def get_dcg_enabled(self) -> bool:
+        return self.config.get("FEATURES", {}).get("DCG_ENABLED", "true") == "true"
+
+    def get_ms_binary(self) -> str:
+        return self.config.get("FEATURES", {}).get("MS_BINARY", "")
+
+    def get_mdwb_binary(self) -> str:
+        return self.config.get("FEATURES", {}).get("MDWB_BINARY", "")
+
     def set_bing_api_key(self, key):
         self.config["API_KEYS"]["BING"] = key
         self.save_config()

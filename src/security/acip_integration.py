@@ -13,12 +13,17 @@ from src.socket_instance import emit_agent
 class ACIP:
     def __init__(self):
         # Load optional full ACIP text if present (not required)
+        # NOTE: \bsudo\b replaced with contextual pattern to avoid blocking
+        # legitimate code descriptions like 'sudo apt-get install'.
         self.heuristic_patterns = [
             r"\brm\s+-rf\b",
-            r"\bsudo\b",
-            r"\bshutdown\b",
-            r"\bformat\b",
+            r"\bsudo\s+rm\b",
+            r"\bsudo\s+dd\b",
+            r"\bsudo\s+mkfs\b",
+            r"\bsudo\s+shutdown\b",
+            r"\bshutdown\s+-[hrPpnf]\b",
             r"IGNORE\s+PREVIOUS\s+INSTRUCTIONS",
+            r"DISREGARD\s+ALL\s+PRIOR",
             r"\bopen\s+SSH\b",
         ]
 
