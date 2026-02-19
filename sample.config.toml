@@ -16,6 +16,7 @@ GEMINI = "<YOUR_GEMINI_API_KEY>"
 MISTRAL = "<YOUR_MISTRAL_API_KEY>"
 GROQ = "<YOUR_GROQ_API_KEY>"
 NETLIFY = "<YOUR_NETLIFY_API_KEY>"
+BRIGHTDATA_MCP = "<YOUR_BRIGHTDATA_MCP_API_KEY>"
 
 [API_ENDPOINTS]
 BING = "https://api.bing.microsoft.com/v7.0/search"
@@ -24,6 +25,7 @@ OLLAMA = "http://127.0.0.1:11434"
 
 LM_STUDIO = "http://localhost:1234/v1"
 OPENAI = "https://api.openai.com/v1"
+BRIGHTDATA_MCP = ""
 
 
 [LOGGING]

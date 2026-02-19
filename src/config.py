@@ -84,6 +84,12 @@ class Config:
     def get_netlify_api_key(self):
         return self.config["API_KEYS"]["NETLIFY"]
 
+    def get_brightdata_mcp_api_key(self):
+        return self.config["API_KEYS"].get("BRIGHTDATA_MCP", "")
+
+    def get_brightdata_mcp_endpoint(self):
+        return self.config["API_ENDPOINTS"].get("BRIGHTDATA_MCP", "")
+
     def get_sqlite_db(self):
         return self.config["STORAGE"]["SQLITE_DB"]
 
