@@ -394,6 +394,21 @@ class AgentRegistry:
                     memory_namespace="brenner"
                 )
             }
+            ,
+            {
+                "name": "python_env_bootstrap",
+                "module_path": "src.synthia.skills.python_env_bootstrap.python_env_bootstrap",
+                "class_name": "PythonEnvBootstrapSkill",
+                "metadata": AgentMetadata(
+                    name="python_env_bootstrap",
+                    display_name="Python Env Bootstrap",
+                    description="Bootstraps local Python environment and requirements via a deterministic script",
+                    category=AgentCategory.DOMAIN,
+                    capabilities=[AgentCapability.DEPLOYMENT, AgentCapability.TESTING],
+                    triggers=["bootstrap python env", "setup python environment", "python env fix"],
+                    memory_namespace="python_env_bootstrap"
+                )
+            }
         ]
         
         for agent_def in builtin_agents:
