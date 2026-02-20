@@ -1,0 +1,50 @@
+{
+  "ecosystem": "yappyverse-os",
+  "version": "2026.02.19",
+  "owner": "executiveusa",
+  "repos": [
+    {
+      "name": "archonx-os",
+      "role": "mothership",
+      "local_path": "C:/archonx-os-main",
+      "git": "git@github.com:executiveusa/archonx-os.git"
+    },
+    {
+      "name": "agent-zero-fork",
+      "role": "primary-orchestrator",
+      "local_path": "",
+      "git": "git@github.com:executiveusa/agent-zero-Fork.git"
+    },
+    {
+      "name": "devika-agent",
+      "role": "github-operator",
+      "local_path": "C:/devika-agent-main/devika-agent-main",
+      "git": "git@github.com:executiveusa/devika-agent.git"
+    },
+    {
+      "name": "paulisworld-openclaw-3d",
+      "role": "3d-meeting-room",
+      "local_path": "C:/paulisworld-openclaw-3d-main",
+      "git": "https://github.com/executiveusa/paulisworld-openclaw-3d.git"
+    },
+    {
+      "name": "dashboard-agent-swarm",
+      "role": "control-plane",
+      "local_path": "",
+      "git": "git@github.com:executiveusa/dashboard-agent-swarm.git"
+    }
+  ],
+  "awareness": {
+    "agent_mail_mcp": {
+      "ws": "ws://127.0.0.1:8765",
+      "http": "http://127.0.0.1:8765"
+    },
+    "beads": {
+      "channel": "ecosystem-awareness",
+      "persistence": "jsonl"
+    },
+    "openclaw": {
+      "world_server": "http://127.0.0.1:18789"
+    }
+  }
+}

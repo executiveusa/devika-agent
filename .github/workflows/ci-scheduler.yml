@@ -9,6 +9,26 @@ on:
     branches: [ main ]
 
 jobs:
+  ci-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Compile check
+        run: |
+          python -m compileall src
+      - name: Unit tests
+        run: |
+          pytest -q
+
   heartbeat:
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +63,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Run minimal smoke tests
         run: |
-          python -m pip install -r requirements.txt || true
-          pytest -q || true
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m compileall src
+          pytest -q tests/test_brenner_skill.py

@@ -1,0 +1,409 @@
+"""
+n8n Workflow Integration for SYNTHIA Skill Manager
+
+This module provides integration with n8n workflows, allowing them to be
+discovered, installed, and managed as skills within the SYNTHIA ecosystem.
+
+n8n provides 400+ integrations for visual workflow automation including:
+- Webhook triggers for external events
+- Scheduled executions with cron
+- HTTP requests with authentication
+- Database operations (PostgreSQL, MySQL, MongoDB)
+- Code execution (JavaScript/Python)
+- Email & notifications (Slack, Discord, SMS)
+"""
+
+import json
+import os
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+import urllib.request
+import urllib.error
+
+
+@dataclass
+class N8nWorkflow:
+    """Represents an n8n workflow."""
+    id: str
+    name: str
+    description: str = ""
+    nodes: List[Dict[str, Any]] = field(default_factory=list)
+    connections: Dict[str, Any] = field(default_factory=dict)
+    settings: Dict[str, Any] = field(default_factory=dict)
+    tags: List[str] = field(default_factory=list)
+    active: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "nodes": self.nodes,
+            "connections": self.connections,
+            "settings": self.settings,
+            "tags": self.tags,
+            "active": self.active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+    
+    @classmethod
+    def from_json(cls, data: Dict[str, Any]) -> "N8nWorkflow":
+        return cls(
+            id=data.get("id", ""),
+            name=data.get("name", ""),
+            description=data.get("description", ""),
+            nodes=data.get("nodes", []),
+            connections=data.get("connections", {}),
+            settings=data.get("settings", {}),
+            tags=data.get("tags", []),
+            active=data.get("active", False),
+            created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
+            updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else None,
+        )
+    
+    def to_skill_markdown(self) -> str:
+        """Convert workflow to SKILL.md format."""
+        # Extract node types for capabilities
+        node_types = list(set(node.get("type", "") for node in self.nodes))
+        
+        # Build frontmatter
+        frontmatter = f"""---
+name: n8n-{self.name.lower().replace(" ", "-")}
+description: "{self.description or f'n8n workflow: {self.name}'}"
+compatibility: "Requires n8n instance"
+metadata:
+  workflow_id: {self.id}
+  node_types: {json.dumps(node_types)}
+  tags: {json.dumps(self.tags)}
+---
+
+"""
+        
+        # Build content
+        content = f"""# n8n Workflow: {self.name}
+
+{self.description}
+
+## Workflow Details
+
+- **ID:** {self.id}
+- **Nodes:** {len(self.nodes)}
+- **Active:** {self.active}
+- **Tags:** {", ".join(self.tags) if self.tags else "None"}
+
+## Nodes
+
+"""
+        
+        for node in self.nodes:
+            node_name = node.get("name", "Unnamed")
+            node_type = node.get("type", "Unknown")
+            content += f"### {node_name}\n\n"
+            content += f"- **Type:** `{node_type}`\n"
+            if node.get("parameters"):
+                content += f"- **Parameters:**\n"
+                for key, value in node["parameters"].items():
+                    content += f"  - `{key}`: {value}\n"
+            content += "\n"
+        
+        content += """## Usage
+
+This workflow can be imported into n8n via:
+
+1. **n8n UI:** Import → Paste JSON
+2. **n8n CLI:** `n8n import:workflow --input=workflow.json`
+3. **API:** POST to `/api/v1/workflows`
+
+## Requirements
+
+"""
+        
+        # Add requirements based on node types
+        requirements = set()
+        for node in self.nodes:
+            node_type = node.get("type", "")
+            if "postgres" in node_type:
+                requirements.add("PostgreSQL database")
+            elif "mysql" in node_type:
+                requirements.add("MySQL database")
+            elif "mongodb" in node_type:
+                requirements.add("MongoDB database")
+            elif "slack" in node_type:
+                requirements.add("Slack API credentials")
+            elif "github" in node_type:
+                requirements.add("GitHub API credentials")
+            elif "openai" in node_type:
+                requirements.add("OpenAI API key")
+            elif "http" in node_type:
+                requirements.add("HTTP endpoint access")
+        
+        for req in requirements:
+            content += f"- {req}\n"
+        
+        content += f"""
+## JSON Definition
+
+```json
+{json.dumps(self.to_dict(), indent=2)}
+```
+
+---
+
+*Generated by SYNTHIA n8n Integration*
+"""
+        
+        return frontmatter + content
+
+
+class N8nIntegration:
+    """
+    Integration with n8n workflow automation platform.
+    
+    Provides:
+    - Workflow discovery from local n8n-workflows directory
+    - Workflow import/export
+    - Conversion to SYNTHIA skills
+    - n8n instance connection for remote management
+    """
+    
+    def __init__(
+        self,
+        workflows_dir: Optional[Path] = None,
+        n8n_base_url: Optional[str] = None,
+        n8n_api_key: Optional[str] = None,
+    ):
+        self.workflows_dir = workflows_dir or Path.cwd() / "n8n-workflows"
+        self.n8n_base_url = n8n_base_url or os.environ.get("N8N_BASE_URL", "http://localhost:5678")
+        self.n8n_api_key = n8n_api_key or os.environ.get("N8N_API_KEY")
+        self._workflows: Dict[str, N8nWorkflow] = {}
+        
+        # Load local workflows
+        self._load_local_workflows()
+    
+    def _load_local_workflows(self) -> None:
+        """Load workflows from local directory."""
+        if not self.workflows_dir.exists():
+            return
+        
+        # Find all JSON workflow files
+        for json_file in self.workflows_dir.rglob("*.json"):
+            try:
+                with open(json_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                # Handle different JSON structures
+                if "nodes" in data:
+                    # Direct workflow JSON
+                    workflow = N8nWorkflow.from_json(data)
+                    workflow.id = workflow.id or json_file.stem
+                    workflow.name = workflow.name or json_file.stem
+                    self._workflows[workflow.id] = workflow
+                elif isinstance(data, list):
+                    # Array of workflows
+                    for i, wf_data in enumerate(data):
+                        if "nodes" in wf_data:
+                            workflow = N8nWorkflow.from_json(wf_data)
+                            workflow.id = workflow.id or f"{json_file.stem}_{i}"
+                            workflow.name = workflow.name or f"{json_file.stem} {i+1}"
+                            self._workflows[workflow.id] = workflow
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Warning: Could not load workflow from {json_file}: {e}")
+    
+    def list_workflows(self) -> List[Dict[str, Any]]:
+        """List all discovered workflows."""
+        return [wf.to_dict() for wf in self._workflows.values()]
+    
+    def get_workflow(self, workflow_id: str) -> Optional[N8nWorkflow]:
+        """Get a workflow by ID."""
+        return self._workflows.get(workflow_id)
+    
+    def search_workflows(self, query: str) -> List[N8nWorkflow]:
+        """Search workflows by name, description, or tags."""
+        query_lower = query.lower()
+        results = []
+        
+        for workflow in self._workflows.values():
+            if (
+                query_lower in workflow.name.lower()
+                or query_lower in workflow.description.lower()
+                or any(query_lower in tag.lower() for tag in workflow.tags)
+            ):
+                results.append(workflow)
+        
+        return results
+    
+    def convert_to_skill(
+        self,
+        workflow_id: str,
+        output_dir: Path,
+    ) -> Optional[Path]:
+        """
+        Convert an n8n workflow to a SYNTHIA skill.
+        
+        Args:
+            workflow_id: ID of the workflow to convert
+            output_dir: Directory to save the skill
+            
+        Returns:
+            Path to the created skill directory
+        """
+        workflow = self._workflows.get(workflow_id)
+        if not workflow:
+            return None
+        
+        # Create skill directory
+        skill_name = f"n8n-{workflow.name.lower().replace(' ', '-')}"
+        skill_dir = output_dir / skill_name
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate SKILL.md
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text(workflow.to_skill_markdown(), encoding="utf-8")
+        
+        # Save workflow JSON
+        workflow_json = skill_dir / "workflow.json"
+        workflow_json.write_text(json.dumps(workflow.to_dict(), indent=2), encoding="utf-8")
+        
+        return skill_dir
+    
+    def create_skill_from_workflow(self, workflow: N8nWorkflow) -> Dict[str, Any]:
+        """
+        Create a skill definition from a workflow.
+        
+        Returns a dictionary suitable for use with SkillManager.
+        """
+        skill_name = f"n8n-{workflow.name.lower().replace(' ', '-')}"
+        
+        return {
+            "name": skill_name,
+            "description": workflow.description or f"n8n workflow: {workflow.name}",
+            "content": workflow.to_skill_markdown(),
+            "version": "1.0.0",
+            "author": "n8n-community",
+            "tags": workflow.tags + ["n8n", "workflow", "automation"],
+            "files": {
+                "workflow.json": json.dumps(workflow.to_dict(), indent=2),
+            },
+        }
+    
+    def _fetch_json(self, url: str, headers: Optional[Dict[str, str]] = None) -> Optional[Dict]:
+        """Fetch JSON from URL."""
+        req = urllib.request.Request(
+            url,
+            headers={"Content-Type": "application/json", **(headers or {})},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (urllib.error.URLError, json.JSONDecodeError):
+            return None
+    
+    def get_remote_workflows(self) -> List[Dict[str, Any]]:
+        """
+        Get workflows from connected n8n instance.
+        
+        Requires N8N_API_KEY to be set.
+        """
+        if not self.n8n_api_key:
+            return []
+        
+        headers = {"X-N8N-API-KEY": self.n8n_api_key}
+        url = f"{self.n8n_base_url}/api/v1/workflows"
+        
+        data = self._fetch_json(url, headers)
+        if data and "data" in data:
+            return data["data"]
+        
+        return []
+    
+    def import_workflow_from_url(self, url: str) -> Optional[N8nWorkflow]:
+        """
+        Import a workflow from a URL.
+        
+        Args:
+            url: URL to the workflow JSON
+            
+        Returns:
+            Imported workflow or None
+        """
+        data = self._fetch_json(url)
+        if data and "nodes" in data:
+            workflow = N8nWorkflow.from_json(data)
+            workflow.id = workflow.id or f"imported-{len(self._workflows)}"
+            self._workflows[workflow.id] = workflow
+            return workflow
+        
+        return None
+    
+    def get_workflow_capabilities(self, workflow_id: str) -> Dict[str, Any]:
+        """
+        Analyze a workflow and return its capabilities.
+        
+        Returns information about:
+        - Node types used
+        - Integrations required
+        - Triggers available
+        - Actions performed
+        """
+        workflow = self._workflows.get(workflow_id)
+        if not workflow:
+            return {}
+        
+        capabilities = {
+            "node_types": set(),
+            "integrations": set(),
+            "triggers": [],
+            "actions": [],
+            "credentials_required": set(),
+        }
+        
+        for node in workflow.nodes:
+            node_type = node.get("type", "")
+            capabilities["node_types"].add(node_type)
+            
+            # Categorize by type
+            if "trigger" in node_type or "webhook" in node_type:
+                capabilities["triggers"].append({
+                    "name": node.get("name", ""),
+                    "type": node_type,
+                })
+            else:
+                capabilities["actions"].append({
+                    "name": node.get("name", ""),
+                    "type": node_type,
+                })
+            
+            # Extract integration info
+            if "n8n-nodes-base." in node_type:
+                integration = node_type.replace("n8n-nodes-base.", "")
+                capabilities["integrations"].add(integration)
+                
+                # Check for credential requirements
+                if node.get("credentials"):
+                    for cred in node["credentials"].values():
+                        if isinstance(cred, dict) and "name" in cred:
+                            capabilities["credentials_required"].add(cred["name"])
+        
+        # Convert sets to lists for JSON serialization
+        capabilities["node_types"] = list(capabilities["node_types"])
+        capabilities["integrations"] = list(capabilities["integrations"])
+        capabilities["credentials_required"] = list(capabilities["credentials_required"])
+        
+        return capabilities
+
+
+# Singleton instance
+_n8n_integration: Optional[N8nIntegration] = None
+
+
+def get_n8n_integration() -> N8nIntegration:
+    """Get the global n8n integration instance."""
+    global _n8n_integration
+    if _n8n_integration is None:
+        _n8n_integration = N8nIntegration()
+    return _n8n_integration

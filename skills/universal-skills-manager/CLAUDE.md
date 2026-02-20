@@ -1,0 +1,263 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This repository contains the **Universal Skills Manager** skill, which acts as a centralized skill manager for AI capabilities across multiple AI coding tools (Gemini CLI, Google Anti-Gravity, OpenCode, Claude Code, Cline, Cursor, etc.).
+
+The skill enables:
+- **Discovery**: Searching for skills from multiple sources — SkillsMP.com (curated, AI semantic search), SkillHub (community skills, no API key required), and ClawHub (versioned skills, semantic search, no API key required)
+- **Installation**: Installing skills from GitHub or ClawHub to User-level (global) or Project-level (local) scopes
+- **Synchronization**: Copying/syncing skills across different AI tools
+- **Consistency**: Maintaining version consistency across installed locations
+- **Cloud Packaging**: Creating ready-to-upload ZIP files for claude.ai/Claude Desktop with embedded API keys
+
+## Architecture
+
+This is a **skill definition repository** containing the Universal Skills Manager in the `universal-skills-manager/` subfolder. It is not a traditional codebase with source files.
+
+### Repository Structure
+
+```
+universal-skills-manager/
+├── README.md                       # Installation & usage documentation
+├── CLAUDE.md                       # This file - technical context
+├── SECURITY.md                     # Security policy and vulnerability reporting
+├── specs.md                        # Technical specification for install script
+├── docs/
+│   ├── TECHNICAL.md                # Technical reference (APIs, scripts, security details)
+│   ├── scan_skill-security-analysis.md  # Full security analysis of scanner
+│   └── remediation-final-code-review.md # Code review of security hardening
+├── tests/
+│   ├── conftest.py                 # Test fixtures (scanner, tmp_skill helpers)
+│   └── test_scan_skill.py          # Scanner test suite (62 tests)
+└── universal-skills-manager/       # The skill folder
+    ├── SKILL.md                    # Skill definition and logic
+    └── scripts/
+        ├── install_skill.py        # Python helper for downloading skills from GitHub
+        ├── scan_skill.py           # Security scanner (20+ detection categories)
+        └── validate_frontmatter.py # claude.ai/Desktop YAML frontmatter validator
+```
+
+### Skill Structure
+
+The `SKILL.md` file follows this format:
+- **Frontmatter**: YAML metadata (name, description, homepage, metadata block with runtime requirements)
+- **Documentation**: Markdown content describing when to use the skill, capabilities, operational rules
+- **Implementation details**: Instructions for the AI agent on how to execute skill functionality
+
+### Supported Tool Ecosystem
+
+The skill manages skills across these AI tools and their respective paths:
+
+| Tool | User Scope (Global) | Project Scope (Local) |
+|------|---------------------|----------------------|
+| Gemini CLI | `~/.gemini/skills/` | `./.gemini/skills/` |
+| Google Anti-Gravity | `~/.gemini/antigravity/skills/` | `./.antigravity/extensions/` |
+| OpenCode | `~/.config/opencode/skills/` | `./.opencode/skills/` |
+| OpenClaw | `~/.openclaw/workspace/skills/` | `./.openclaw/skills/` |
+| Claude Code | `~/.claude/skills/` | `./.claude/skills/` |
+| OpenAI Codex | `~/.codex/skills/` | `./.codex/skills/` |
+| block/goose | `~/.config/goose/skills/` | `./.goose/agents/` |
+| Roo Code | `~/.roo/skills/` | `./.roo/skills/` |
+| Cursor | `~/.cursor/skills/` | `./.cursor/skills/` |
+| Cline | `~/.cline/skills/` | `./.cline/skills/` |
+
+### claude.ai and Claude Desktop Support
+
+For claude.ai and Claude Desktop, skills must be uploaded as ZIP files through the web UI. The skill includes a "Package for Cloud Upload" capability that:
+1. Prompts user for their SkillsMP API key (optional — SkillHub works without one)
+2. Creates `config.json` with the embedded key
+3. Generates a ZIP file ready for upload
+
+The hybrid API key discovery checks:
+1. `$SKILLSMP_API_KEY` environment variable (Claude Code)
+2. `config.json` in skill directory (claude.ai/Claude Desktop)
+3. Source selection prompt: offer SkillsMP (with key), SkillHub (no key needed), or ClawHub (no key needed) as fallback
+
+## Key Concepts
+
+### Multi-Source Skill Discovery
+
+The skill discovers skills from three sources:
+
+#### SkillsMP API (Primary, Curated)
+
+**API Endpoints:**
+- **Keyword Search**: `/api/v1/skills/search?q={query}&limit=20&sortBy=recent|stars`
+- **AI Semantic Search**: `/api/v1/skills/ai-search?q={query}`
+
+**Authentication:**
+- Bearer token required via `SKILLSMP_API_KEY` environment variable
+- Header format: `Authorization: Bearer $SKILLSMP_API_KEY`
+- Configuration options:
+  - Shell profile: `export SKILLSMP_API_KEY="your_key"` in `~/.zshrc` or `~/.bashrc`
+  - Home directory .env: Create `~/.env` with the API key, then `source ~/.env`
+  - Session-based: `export SKILLSMP_API_KEY="your_key"` (temporary)
+
+**Response Fields:**
+- `id`, `name`, `author`, `description`
+- `githubUrl` (for fetching skill content)
+- `skillUrl` (web page URL)
+- `stars`, `updatedAt`
+
+**Content Fetching:**
+Skills are stored in GitHub repositories. To get the actual SKILL.md content:
+1. Extract from `githubUrl`: `https://github.com/{user}/{repo}/tree/{branch}/{path}`
+2. Convert to raw URL: `https://raw.githubusercontent.com/{user}/{repo}/{branch}/{path}/SKILL.md`
+3. Fetch using curl or web_fetch
+
+#### SkillHub API (Secondary, Community)
+
+**Base URL:** `https://skills.palebluedot.live/api`
+
+**Authentication:** None required (open API)
+
+**API Endpoints:**
+- **Search**: `GET /api/skills?q={query}&limit=20` — keyword search
+- **Detail**: `GET /api/skills/{id}` — full skill details with `skillPath`, `branch`, `rawContent`
+- **Categories**: `GET /api/categories` — list skill categories
+
+**Response Fields (Search):**
+- `id` (e.g., `wshobson/agents/debugging-strategies`), `name`, `description`
+- `githubOwner`, `githubRepo`, `githubStars`
+- `downloadCount`, `securityScore`, `rating`
+
+**Content Fetching:**
+1. Fetch skill detail: `GET /api/skills/{id}` to get `skillPath` and `branch`
+2. Construct GitHub tree URL: `https://github.com/{githubOwner}/{githubRepo}/tree/{branch}/{skillPath}`
+3. Pass to `install_skill.py` for download
+
+**IMPORTANT:** The `id` field does NOT map to the file path within the repo. Always use the detail endpoint to get the correct `skillPath`.
+
+#### ClawHub API (Tertiary, Versioned)
+
+**Base URL:** `https://clawhub.ai/api/v1`
+
+**Authentication:** None required (open API). Rate limit: 120 reads/min per IP.
+
+**API Endpoints:**
+- **Semantic Search**: `GET /api/v1/search?q={query}&limit=20` — vector/similarity search ranked by `score`
+- **Browse/List**: `GET /api/v1/skills?limit=20&sort=stars|downloads|updated|trending&cursor={cursor}` — cursor-paginated browsing
+- **Detail**: `GET /api/v1/skills/{slug}` — full skill details with owner, version, moderation status
+- **File**: `GET /api/v1/skills/{slug}/file?path=SKILL.md&version={ver}` — raw file content (`text/plain`, NOT JSON)
+- **Download**: `GET /api/v1/download?slug={slug}&version={ver}` — full skill as ZIP
+
+**Response Fields (Search):**
+- `score` (similarity), `slug`, `displayName`, `summary`, `version`, `updatedAt`
+
+**Response Fields (Browse):**
+- `slug`, `displayName`, `summary`, `version`, `stats.stars`, `stats.downloads`
+
+**Content Fetching:**
+ClawHub hosts skill files directly — no GitHub URL construction needed:
+1. Fetch file content: `GET /api/v1/skills/{slug}/file?path=SKILL.md` (returns raw text)
+2. For multi-file skills: `GET /api/v1/download?slug={slug}` (returns ZIP)
+3. Run `scan_skill.py` manually (since `install_skill.py` is bypassed for ClawHub)
+
+**Key Differences from SkillsMP/SkillHub:**
+- Skills identified by `slug` (not GitHub paths)
+- Direct file hosting (no GitHub URL construction)
+- Explicit version numbers on every skill
+- Built-in semantic/vector search
+- VirusTotal integration for security scanning (`moderation` field)
+
+### Skill Installation Flow
+
+When installing a skill, the manager:
+1. Identifies the source (SkillsMP search result, SkillHub search result, ClawHub search result, or local file)
+2. Fetches skill content from GitHub (converts tree URL to raw URL) or directly from ClawHub (via `/file` endpoint)
+3. Determines target scope (User/Global vs Project/Local)
+4. Performs a "Sync Check" to detect other installed AI tools
+5. Offers to sync the skill across all detected tools
+6. Creates the skill directory structure: `.../skills/{skill-name}/SKILL.md`
+
+### Skill Discovery
+
+Skills are discovered from multiple sources:
+- **SkillsMP.com** (primary, curated): Keyword search + AI semantic search, requires API key
+- **SkillHub** (secondary, community): Keyword search, no API key required
+- **ClawHub** (tertiary, versioned): Semantic/vector search, no API key required
+- **Method**: API calls using curl/bash, parse JSON responses, display results with metadata and source labels
+
+### Synchronization Logic
+
+The skill maintains consistency by:
+- Comparing modification times or content across all installed locations
+- Reporting version mismatches
+- Offering to overwrite older versions with newer ones
+
+## Working with This Repository
+
+### File Locations
+
+- **Skill definition**: `universal-skills-manager/SKILL.md` - The main skill logic and instructions
+- **Install helper**: `universal-skills-manager/scripts/install_skill.py` - Python script for downloading skills from GitHub
+- **Security scanner**: `universal-skills-manager/scripts/scan_skill.py` - Security scanner with 20+ detection categories
+- **Frontmatter validator**: `universal-skills-manager/scripts/validate_frontmatter.py` - claude.ai/Desktop YAML frontmatter validator and fixer
+- **Technical reference**: `docs/TECHNICAL.md` - API reference, script usage, security details, frontmatter spec
+- **Test suite**: `tests/test_scan_skill.py` - 62 tests covering all scanner detection categories
+- **Security policy**: `SECURITY.md` - Vulnerability reporting and security architecture
+- **User documentation**: `README.md` - Installation, configuration, and usage guide
+- **Developer context**: `CLAUDE.md` - This file, technical architecture and guidelines
+
+### Testing Changes
+
+When modifying the skill:
+1. Edit `universal-skills-manager/SKILL.md`
+2. Verify environment variable `SKILLSMP_API_KEY` is set
+3. Test API calls manually using curl (examples in README)
+4. Install the modified skill locally to test: `cp -r universal-skills-manager ~/.claude/skills/`
+5. Test discovery, installation, and sync workflows
+
+When modifying the security scanner (`scan_skill.py`):
+1. Run the test suite: `python3 -m pytest tests/ -v`
+2. All 62 tests must pass before committing
+3. Test manually against a known-good skill directory
+4. Test manually against a crafted malicious skill to verify detection
+
+## Development Guidelines
+
+### Modifying the Skill
+
+When editing `SKILL.md`:
+- Maintain YAML frontmatter validity (name, description, homepage, metadata fields)
+- Keep the structure: frontmatter → usage triggers → capabilities → operational rules
+- Ensure instructions are clear for AI agent execution
+- Test that the markdown renders correctly
+
+### Adding New AI Tool Support
+
+To add a new AI tool:
+1. Add the tool to the ecosystem table in SKILL.md
+2. Specify both User-level and Project-level paths
+3. Document any tool-specific requirements (manifest files, naming conventions)
+4. Update the "Cross-Platform Adaptation" section if the tool requires special handling
+
+### Installed Skill Directory Structure
+
+When the Universal Skills Manager installs a skill, it creates this structure in the target AI tool:
+```
+~/.claude/skills/{skill-name}/     # Or other tool's path
+  ├── SKILL.md (required)
+  ├── Reference docs (optional)
+  ├── Scripts (optional)
+  └── Config files (optional)
+```
+
+For example, installing "code-debugging" creates:
+```
+~/.claude/skills/code-debugging/SKILL.md
+```
+
+## Important Notes
+
+- **API Key Optional**: The `SKILLSMP_API_KEY` environment variable enables SkillsMP search (curated, AI semantic). Without it, SkillHub's open catalog and ClawHub's versioned catalog are available as fallbacks. See README.md for configuration instructions.
+- **Root Directory Safety**: The install script will abort with exit code 4 if the destination appears to be a root skills directory (contains skills but no SKILL.md). This prevents accidental data loss.
+- **Update Comparison**: When updating an existing skill, the script compares files and shows a diff before overwriting, prompting for confirmation.
+- **No overwriting without confirmation**: Always ask before overwriting existing skills unless "--force" is explicitly used
+- **Structure integrity**: Never dump loose files into the root skills directory; always create a dedicated folder per skill
+- **Cross-platform compatibility**: Some tools (OpenCode, Anti-Gravity) may require additional manifest files generated from SKILL.md frontmatter
+- **GitHub content fetching**: Skills from SkillsMP/SkillHub are fetched from GitHub using raw URLs converted from tree URLs. ClawHub skills are fetched directly via ClawHub's `/file` endpoint.
+- **ClawHub install bypass**: ClawHub installs bypass `install_skill.py` (which expects GitHub URLs). Instead, content is fetched via ClawHub's API, saved to a temp directory, scanned with `scan_skill.py` manually, and then copied to the destination.

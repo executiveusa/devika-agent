@@ -5,6 +5,89 @@
 
 ---
 
+## 0. Global Skill Sharing System
+
+### SYNTHIA Skill Manager
+- **Module:** `src/synthia/skill_manager.py`
+- **Singleton:** `from src.synthia.skill_manager import get_skill_manager`
+- **Purpose:** Centralized skill management with multi-source discovery, cross-tool synchronization, and security scanning.
+- **Key methods:**
+  - `skill_manager.search(query, sources, limit)` — Search skills from SkillsMP, SkillHub, ClawHub, or local
+  - `skill_manager.install(skill_id, source, scope, target_tools)` — Install skill with security scanning
+  - `skill_manager.sync(skill_name, target_tools)` — Sync skill across multiple AI tools
+  - `skill_manager.list_installed()` — List all installed skills
+  - `skill_manager.generate_report()` — Generate skill matrix report
+- **Config flag:** `[FEATURES] SKILL_MANAGER_ENABLED = "true"` in `config.toml`
+- **API Keys:** Set `SKILLSMP_API_KEY` environment variable for SkillsMP search (optional — SkillHub and ClawHub work without API key)
+
+### Supported Skill Sources
+
+| Source | API Key Required | Description |
+|--------|------------------|-------------|
+| **SkillsMP** | Yes (`SKILLSMP_API_KEY`) | Curated skills with AI semantic search |
+| **SkillHub** | No | Community skills catalog |
+| **ClawHub** | No | Versioned skills with semantic search |
+| **Local** | No | Skills in local `skills/` directory |
+| **n8n** | No | n8n workflow integrations |
+
+### Supported AI Tools for Skill Sync
+
+| Tool | Global Path | Local Path |
+|------|-------------|------------|
+| **Claude Code** | `~/.claude/skills/` | `./.claude/skills/` |
+| **Gemini CLI** | `~/.gemini/skills/` | `./.gemini/skills/` |
+| **Cursor** | `~/.cursor/skills/` | `./.cursor/skills/` |
+| **OpenAI Codex** | `~/.codex/skills/` | `./.codex/skills/` |
+| **OpenCode** | `~/.config/opencode/skills/` | `./.opencode/skills/` |
+| **Cline** | `~/.cline/skills/` | `./.cline/skills/` |
+| **Roo Code** | `~/.roo/skills/` | `./.roo/skills/` |
+| **block/goose** | `~/.config/goose/skills/` | `./.goose/agents/` |
+| **SYNTHIA** | `~/.synthia/skills/` | `./skills/` |
+
+### Skill Installation Scopes
+
+- **GLOBAL** — User-level skills available across all projects
+- **PROJECT** — Project-level skills only for current project
+
+### Security Scanning
+
+All skills are automatically scanned at install time for:
+- **Critical:** Destructive commands, remote code execution, disk operations
+- **High:** Hardcoded secrets, unsafe deserialization, SSL bypass
+- **Medium:** Debug statements, TODO comments, empty blocks
+
+### Quick Start Commands
+
+```python
+from src.synthia.skill_manager import get_skill_manager
+
+# Get skill manager instance
+sm = get_skill_manager()
+
+# Search for skills
+results = sm.search("debugging", limit=5)
+
+# Install a skill
+result = sm.install("debug-helper", source=SkillSource.SKILLHUB)
+
+# Sync across tools
+sync_result = sm.sync("debug-helper", target_tools=["claude", "cursor"])
+
+# Generate report
+report = sm.generate_report()
+```
+
+### Universal Skills Manager Integration
+
+The Universal Skills Manager from [jacob-bd/universal-skills-manager](https://github.com/jacob-bd/universal-skills-manager) is integrated at `skills/universal-skills-manager/`. It provides:
+- Multi-source skill discovery (SkillsMP, SkillHub, ClawHub)
+- One-click installation with atomic validation
+- Cross-tool synchronization
+- Security scanning with 20+ detection categories
+- Skill matrix reports
+
+---
+
 ## 1. Security & Safety
 
 ### ACIP — Advanced Cognitive Inoculation Prompt Checker
@@ -117,6 +200,11 @@ All models unified under `src/llm/llm.py` via `LLM(model_id=)`. Supported provid
 - **Methods:** `add_knowledge(tag, contents)`, `get_knowledge(tag) -> str`
 - **TODO:** Tag lookup is basic equality — upgrade to BM25 fuzzy search for better recall.
 
+### SYNTHIA Memory Manager
+- **Module:** `src/synthia/memory.py`
+- **Purpose:** Multi-layer persistent memory (PROJECT, TEAM, GLOBAL) with semantic search
+- **Features:** SQLite + FTS5 full-text search, Archon X webhook sync
+
 ### RAG
 - **Module:** `src/memory/rag.py`
 - **Purpose:** Retrieval-augmented generation for long-term memory.
@@ -136,6 +224,7 @@ All models unified under `src/llm/llm.py` via `LLM(model_id=)`. Supported provid
 | Git | `src/services/git.py` | Local git operations |
 | PDF | `src/documenter/pdf.py` | Convert Markdown to PDF |
 | UML | `src/documenter/uml.py` | Generate UML diagrams |
+| n8n | `n8n-workflows/` | Visual workflow automation with 400+ integrations |
 
 ---
 
@@ -144,12 +233,12 @@ All models unified under `src/llm/llm.py` via `LLM(model_id=)`. Supported provid
 All config lives in `config.toml` (auto-created from `sample.config.toml` on first run).
 
 Key sections:
-- `[API_KEYS]` — provider API keys (Bing, Google, Claude, OpenAI, Gemini, Mistral, Groq, Netlify)
+- `[API_KEYS]` — provider API keys (Bing, Google, Claude, OpenAI, Gemini, Mistral, Groq, Netlify, SkillsMP)
 - `[API_ENDPOINTS]` — provider API base URLs (Bing, Google, Ollama, LM Studio, OpenAI)
 - `[STORAGE]` — paths for DB, screenshots, PDFs, projects, logs, repos
 - `[LOGGING]` — `LOG_REST_API`, `LOG_PROMPTS`
 - `[TIMEOUT]` — `INFERENCE` (seconds)
-- `[FEATURES]` — `ACIP_ENABLED`, `DCG_ENABLED`, `MS_BINARY`, `MDWB_BINARY`
+- `[FEATURES]` — `ACIP_ENABLED`, `DCG_ENABLED`, `MS_BINARY`, `MDWB_BINARY`, `SKILL_MANAGER_ENABLED`
 
 ---
 
@@ -183,7 +272,31 @@ All served by Flask at port `1337` (`devika.py`):
 
 ---
 
-## 11. Quick Start Commands
+## 11. Installed Skills
+
+### Universal Skills Manager
+- **Path:** `skills/universal-skills-manager/`
+- **Purpose:** Master coordinator for AI skills with multi-source discovery
+- **Features:** SkillsMP, SkillHub, ClawHub integration, security scanning, cross-tool sync
+
+### Brenner Skill
+- **Path:** `src/synthia/skills/brenner_skill/`
+- **Purpose:** Custom skill for Brenner operations
+- **SKILL.md:** Contains skill definition and usage instructions
+
+### UI/UX Pro Max Skill
+- **Path:** `n8n-workflows/StoryToolkitAI-main/ui-ux-pro-max-skill-main/`
+- **Purpose:** 50+ design styles, 97 color palettes, 57 font pairings
+- **Features:** Design system generation, theme creation, Awwwards-level output
+
+### n8n Workflows
+- **Path:** `n8n-workflows/`
+- **Purpose:** Visual workflow automation with 400+ integrations
+- **Features:** Webhook triggers, scheduled executions, API orchestration
+
+---
+
+## 12. Quick Start Commands
 
 ```bash
 # Backend
@@ -195,11 +308,14 @@ python devika.py
 # Frontend (new terminal)
 cd ui && bun install && bun run start
 # Open http://127.0.0.1:3001
+
+# Skill Management
+python -c "from src.synthia.skill_manager import get_skill_manager; sm = get_skill_manager(); print(sm.search('debugging'))"
 ```
 
 ---
 
-## 12. Flywheel Integration Checklist
+## 13. Flywheel Integration Checklist
 
 When adding a new capability, follow this pattern:
 1. Add a wrapper/client module in `src/` under the appropriate subfolder
@@ -211,4 +327,21 @@ When adding a new capability, follow this pattern:
 
 ---
 
-*Last updated: 2026-02-17 | Sprint: YOLO Flywheel Integration*
+## 14. Ecosystem Integration
+
+### Yappyverse Ecosystem
+- **Manifest:** `ecosystem/ecosystem-manifest.json`
+- **Mothership:** Archon X (`C:/archonx-os-main`)
+- **Primary Orchestrator:** Agent Zero Fork
+- **GitHub Operator:** Devika Agent
+- **3D Meeting Room:** Pauli's World OpenClaw 3D
+- **Control Plane:** Dashboard Agent Swarm
+
+### Awareness Bridge
+- **Module:** `src/synthia/ecosystem/awareness.py`
+- **Purpose:** Cross-repo awareness for SYNTHIA
+- **Features:** Beads events, Archon X webhook, Agent Mail MCP
+
+---
+
+*Last updated: 2026-02-20 | Sprint: Global Skill Sharing Integration*

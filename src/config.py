@@ -129,6 +129,15 @@ class Config:
     def get_mdwb_binary(self) -> str:
         return self.config.get("FEATURES", {}).get("MDWB_BINARY", "")
 
+    def get_ralphy_loop_enabled(self) -> bool:
+        return self.config.get("FEATURES", {}).get("RALPHY_LOOP_ENABLED", "true") == "true"
+
+    def get_brenner_simulate(self) -> bool:
+        return self.config.get("FEATURES", {}).get("BRENNER_SIMULATE", "true") == "true"
+
+    def get_brenner_http_endpoint(self) -> str:
+        return self.config.get("API_ENDPOINTS", {}).get("BRENNER_HTTP", "")
+
     def set_bing_api_key(self, key):
         self.config["API_KEYS"]["BING"] = key
         self.save_config()

@@ -26,6 +26,7 @@ OLLAMA = "http://127.0.0.1:11434"
 LM_STUDIO = "http://localhost:1234/v1"
 OPENAI = "https://api.openai.com/v1"
 BRIGHTDATA_MCP = ""
+BRENNER_HTTP = ""
 
 
 [LOGGING]
@@ -54,3 +55,5 @@ CLAW_SOUL_PATH = "src/synthia/claw/soul.json"
 RALPHY_REPO_URL = "https://github.com/michaelshimeles/ralphy.git"
 FLYWHEEL_SETUP_URL = "https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup.git"
 AGENT_FLYWHEEL_SITE = "https://agent-flywheel.com/"
+RALPHY_LOOP_ENABLED = "true"
+BRENNER_SIMULATE = "true"

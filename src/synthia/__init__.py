@@ -14,12 +14,17 @@ This module provides:
 - Agent Lightning mentor/trainer integration
 - Quality gates for production-ready code
 - Unified orchestrator
+- Global skill sharing system (Universal Skills Manager integration)
+- n8n workflow integration
 
 Architecture:
     User Request → SYNTHIA Core → Memory Layer → Investigation → Execution → Quality Gates → Deployment
     
 Flywheel Effect:
     SYNTHIA executes → Quality Gates validate → Agent Lightning observes/trains → Memory syncs → Improved execution
+
+Skill Sharing:
+    Skill Manager → Multi-source discovery → Security scan → Cross-tool sync → n8n integration
 """
 
 from .core import SynthiaCore
@@ -35,8 +40,21 @@ from .orchestrator import (
 )
 from .execution import RalphyExecutionEngine, TaskPriority, detect_priority
 from .trainer import AgentLightning
+from .skill_manager import (
+    SkillManager,
+    Skill,
+    SkillSource,
+    SkillScope,
+    SearchResult,
+    get_skill_manager,
+)
+from .n8n_integration import (
+    N8nIntegration,
+    N8nWorkflow,
+    get_n8n_integration,
+)
 
-__version__ = "4.2.0"
+__version__ = "4.2.1"
 __author__ = "SYNTHIA Team"
 __all__ = [
     # Core
@@ -59,4 +77,17 @@ __all__ = [
     
     # Agent Lightning
     "AgentLightning",
+    
+    # Skill Manager
+    "SkillManager",
+    "Skill",
+    "SkillSource",
+    "SkillScope",
+    "SearchResult",
+    "get_skill_manager",
+    
+    # n8n Integration
+    "N8nIntegration",
+    "N8nWorkflow",
+    "get_n8n_integration",
 ]

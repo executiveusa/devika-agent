@@ -1,6 +1,8 @@
 from typing import Dict
 import logging
 
+from src.synthia.memory import MemoryLayer, MemoryManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,12 +15,26 @@ class MemorySync:
 
     def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
+        self.memory = MemoryManager(enable_embeddings=False)
 
     def sync(self) -> Dict[str, int]:
-        # For now, simulate scanning local memory and reporting.
         logger.info("MemorySync: starting (dry_run=%s)", self.dry_run)
-        # TODO: integrate with src/synthia/memory.MemoryManager
-        # Simulated result
-        result = {"scanned": 0, "synced": 0}
+        project_data = self.memory.export_layer(MemoryLayer.PROJECT)
+        entries = project_data.get("entries", [])
+        scanned = len(entries)
+        synced = 0
+
+        if not self.dry_run:
+            for e in entries:
+                key = f"team:{e['key']}"
+                self.memory.store(
+                    key=key,
+                    value=e.get("value", ""),
+                    layer=MemoryLayer.TEAM,
+                    project_name=e.get("project_name"),
+                )
+                synced += 1
+
+        result = {"scanned": scanned, "synced": synced}
         logger.info("MemorySync: completed: %s", result)
         return result

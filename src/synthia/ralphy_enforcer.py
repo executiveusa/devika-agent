@@ -8,6 +8,7 @@ desired.
 """
 from typing import Any
 from .agent_registry import AgentMetadata
+from .ralphy_loop import RalphyLoop
 
 
 def enforce(agent_name: str, context: Any, *args, **kwargs):
@@ -19,10 +20,12 @@ def enforce(agent_name: str, context: Any, *args, **kwargs):
     This is a safe, idempotent enforcer that other agents can rely on.
     """
     try:
+        loop = RalphyLoop()
         if isinstance(context, dict):
             if "ralphy_priority" not in context:
-                # Default to 'standard' unless agent metadata suggests otherwise
-                context["ralphy_priority"] = context.get("priority", "standard")
+                decision = loop.classify(context)
+                context["ralphy_priority"] = decision.priority
+                context["ralphy_reason"] = decision.reason
         else:
             # not a dict; no-op
             pass

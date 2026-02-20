@@ -1,0 +1,106 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-02-20T03:35:00Z",
+  "skills": {
+    "universal-skills-manager": {
+      "name": "universal-skills-manager",
+      "description": "The master coordinator for AI skills. Discovers skills from multiple sources (SkillsMP.com, SkillHub, and ClawHub), manages installation, and synchronization across Claude Code, Gemini CLI, Google Anti-Gravity, OpenCode, and other AI tools.",
+      "source": "local",
+      "path": "skills/universal-skills-manager/universal-skills-manager",
+      "version": "1.6.0",
+      "author": "jacob-bd",
+      "tags": ["skill-manager", "multi-source", "cross-tool", "sync"],
+      "dependencies": ["python3", "curl"],
+      "compatible_tools": ["claude", "gemini", "cursor", "codex", "opencode", "cline", "roo", "goose", "synthia"],
+      "installed_at": "2026-02-20T03:15:00Z",
+      "security_scanned": true
+    },
+    "brenner-skill": {
+      "name": "brenner-skill",
+      "description": "Custom skill for Brenner operations within SYNTHIA ecosystem.",
+      "source": "local",
+      "path": "src/synthia/skills/brenner_skill",
+      "version": "1.0.0",
+      "author": "synthia-team",
+      "tags": ["brenner", "custom", "internal"],
+      "dependencies": [],
+      "compatible_tools": ["synthia"],
+      "installed_at": "2026-02-18T00:00:00Z",
+      "security_scanned": true
+    },
+    "ui-ux-pro-max": {
+      "name": "ui-ux-pro-max",
+      "description": "50+ design styles, 97 color palettes, 57 font pairings for Awwwards-level UI/UX generation.",
+      "source": "local",
+      "path": "n8n-workflows/StoryToolkitAI-main/ui-ux-pro-max-skill-main(2)/ui-ux-pro-max-skill-main/skills/ui-ux-pro-max",
+      "version": "1.0.0",
+      "author": "nextlevelbuilder",
+      "tags": ["ui", "ux", "design", "styles", "palettes", "typography", "awwwards"],
+      "dependencies": [],
+      "compatible_tools": ["claude", "synthia"],
+      "installed_at": "2026-02-18T00:00:00Z",
+      "security_scanned": true
+    }
+  },
+  "sources": {
+    "skillsmp": {
+      "name": "SkillsMP",
+      "url": "https://skillsmp.com",
+      "api_endpoint": "https://api.skillsmp.com/v1",
+      "requires_api_key": true,
+      "description": "Curated skills with AI semantic search"
+    },
+    "skillhub": {
+      "name": "SkillHub",
+      "url": "https://skills.palebluedot.live",
+      "api_endpoint": "https://skills.palebluedot.live/api",
+      "requires_api_key": false,
+      "description": "Community skills catalog"
+    },
+    "clawhub": {
+      "name": "ClawHub",
+      "url": "https://clawhub.ai",
+      "api_endpoint": "https://clawhub.ai/api",
+      "requires_api_key": false,
+      "description": "Versioned skills with semantic search"
+    }
+  },
+  "tool_paths": {
+    "claude": {
+      "global": "~/.claude/skills",
+      "local": "./.claude/skills"
+    },
+    "gemini": {
+      "global": "~/.gemini/skills",
+      "local": "./.gemini/skills"
+    },
+    "cursor": {
+      "global": "~/.cursor/skills",
+      "local": "./.cursor/skills"
+    },
+    "codex": {
+      "global": "~/.codex/skills",
+      "local": "./.codex/skills"
+    },
+    "opencode": {
+      "global": "~/.config/opencode/skills",
+      "local": "./.opencode/skills"
+    },
+    "cline": {
+      "global": "~/.cline/skills",
+      "local": "./.cline/skills"
+    },
+    "roo": {
+      "global": "~/.roo/skills",
+      "local": "./.roo/skills"
+    },
+    "goose": {
+      "global": "~/.config/goose/skills",
+      "local": "./.goose/agents"
+    },
+    "synthia": {
+      "global": "~/.synthia/skills",
+      "local": "./skills"
+    }
+  }
+}

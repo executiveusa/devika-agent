@@ -1,6 +1,7 @@
 import json
 from typing import Dict
 import os
+import requests
 
 class BrennerAdapter:
     """Minimal Brenner adapter. Currently runs in simulate mode by default.
@@ -32,5 +33,39 @@ class BrennerAdapter:
                 "stream": stream
             }
 
-        # TODO: implement real integration (HTTP / CLI / WebSocket)
-        raise NotImplementedError("Real Brenner integration not implemented")
+        endpoint = os.environ.get("BRENNER_HTTP_URL", "").strip()
+        token = os.environ.get("BRENNER_HTTP_TOKEN", "").strip()
+        if not endpoint:
+            return {
+                "source": "brenner",
+                "query": query,
+                "error": "BRENNER_HTTP_URL not configured",
+                "stream": stream,
+            }
+
+        headers = {"Content-Type": "application/json"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        try:
+            resp = requests.post(
+                endpoint,
+                json={"query": query, "stream": stream},
+                headers=headers,
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return {
+                "source": "brenner_http",
+                "query": query,
+                "reply": data.get("reply", data),
+                "stream": stream,
+            }
+        except Exception as exc:
+            return {
+                "source": "brenner_http",
+                "query": query,
+                "error": str(exc),
+                "stream": stream,
+            }
