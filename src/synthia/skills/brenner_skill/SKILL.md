@@ -1,5 +1,5 @@
 ---
-name: brenner-skill
+name: brenner_skill
 description: "Brenner Bot deep-reasoning skill. Trigger with 'brenner:deepreason'. Use when agents need a live, streamed deep-reasoning session or artifact compilation assistance."
 ---
 
