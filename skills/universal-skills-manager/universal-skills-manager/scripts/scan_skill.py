@@ -433,6 +433,20 @@ class SkillScanner:
             st = os.fstat(fd)
             if not stat_mod.S_ISREG(st.st_mode):
                 return  # Not a regular file (pipe, device, etc.)
+            # Treat zero read bits as unreadable even if current user can bypass ACL checks.
+            # This keeps scanner behavior deterministic across CI/OS combinations.
+            if (st.st_mode & 0o444) == 0:
+                self.files_scanned.append(relative)
+                self._add_finding(
+                    severity="info",
+                    category="unreadable_file",
+                    file=relative,
+                    line=0,
+                    description="File has no read permission bits",
+                    matched_text="",
+                    recommendation="Investigate why this file is unreadable. Restrictive permissions may hide malicious content.",
+                )
+                return
             if st.st_size > MAX_FILE_SIZE:
                 self.files_scanned.append(relative)
                 self._add_finding(

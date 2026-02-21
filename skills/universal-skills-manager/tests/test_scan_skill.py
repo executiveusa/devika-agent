@@ -286,8 +286,11 @@ def test_git_directory_skipped(scanner, tmp_skill):
 # --- Task 4.1: Report unreadable/binary files (L1) ---
 
 import stat
+import sys
+import pytest
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="chmod(000) semantics differ on Windows")
 def test_unreadable_file_produces_finding(scanner, tmp_skill):
     """Files that can't be read must produce an info-level finding."""
     p = tmp_skill.add_file("locked.md", "secret content")

@@ -368,7 +368,7 @@ class NicheDetector:
             "dependencies": ["stripe", "paypal", "donorbox", "classy", "benevity", "givebutter"],
             "colors": ["#E53E3E", "#38A169", "#3182CE", "#D69E2E", "#805AD5", "#319795"],
             "design": {
-                "color_palette": ["#FFFFFF", "#E53E3E", "#38A169", #F7FAFC", "#2D3748"],
+                "color_palette": ["#FFFFFF", "#E53E3E", "#38A169", "#F7FAFC", "#2D3748"],
                 "typography": {"heading": "Poppins", "body": "Open Sans", "mono": "Roboto Mono"},
                 "spacing_scale": "comfortable",
                 "border_radius": "medium",

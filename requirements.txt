@@ -4,7 +4,7 @@ toml
 urllib3
 requests
 colorama
-fastlogging
+fastlogging; python_version < "3.13"
 Jinja2
 mistletoe
 markdownify

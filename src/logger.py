@@ -1,16 +1,68 @@
 from functools import wraps
+import logging
+from pathlib import Path
 
-from fastlogging import LogInit
 from flask import request
 
 from src.config import Config
+
+try:
+    from fastlogging import LogInit  # type: ignore
+except Exception:
+    LogInit = None
+
+
+class _StdLoggerAdapter:
+    """Compatibility adapter for environments without fastlogging."""
+
+    def __init__(self, path_name: str):
+        self.pathName = path_name
+        Path(path_name).parent.mkdir(parents=True, exist_ok=True)
+        self._logger = logging.getLogger("devika_agent")
+        self._logger.setLevel(logging.INFO)
+
+        if not self._logger.handlers:
+            file_handler = logging.FileHandler(path_name, encoding="utf-8")
+            stream_handler = logging.StreamHandler()
+            formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+            file_handler.setFormatter(formatter)
+            stream_handler.setFormatter(formatter)
+            self._logger.addHandler(file_handler)
+            self._logger.addHandler(stream_handler)
+
+    def flush(self):
+        for handler in self._logger.handlers:
+            try:
+                handler.flush()
+            except Exception:
+                continue
+
+    def info(self, message: str):
+        self._logger.info(message)
+
+    def error(self, message: str):
+        self._logger.error(message)
+
+    def warning(self, message: str):
+        self._logger.warning(message)
+
+    def debug(self, message: str):
+        self._logger.debug(message)
+
+    def exception(self, message: str):
+        self._logger.exception(message)
 
 
 class Logger:
     def __init__(self, filename="devika_agent.log"):
         config = Config()
         logs_dir = config.get_logs_dir()
-        self.logger = LogInit(pathName=logs_dir + "/" + filename, console=True, colors=True, encoding="utf-8")
+        path_name = logs_dir + "/" + filename
+
+        if LogInit is not None:
+            self.logger = LogInit(pathName=path_name, console=True, colors=True, encoding="utf-8")
+        else:
+            self.logger = _StdLoggerAdapter(path_name)
 
     def read_log_file(self) -> str:
         with open(self.logger.pathName, "r") as file:

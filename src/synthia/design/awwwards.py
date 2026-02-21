@@ -266,7 +266,7 @@ class AwwwardsInspiration:
             category="animation",
             description="Elements fade in with staggered timing on page load",
             tags=["animation", "fade", "stagger", "entrance"],
-            css_snippet=""`
+            css_snippet="""
 .stagger-item {
   opacity: 0;
   transform: translateY(20px);
