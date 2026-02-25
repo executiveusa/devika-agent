@@ -24,6 +24,7 @@ logger = logging.getLogger("synthia.quality.testing")
 
 class TestToolStatus(Enum):
     """Status of testing tools"""
+    __test__ = False
     AVAILABLE = "available"
     NOT_INSTALLED = "not_installed"
     ERROR = "error"
@@ -48,6 +49,7 @@ class CoverageResult:
 @dataclass
 class TestRunResult:
     """Result from test execution"""
+    __test__ = False
     tool: str
     status: TestToolStatus
     exit_code: int
@@ -64,6 +66,7 @@ class TestRunResult:
 @dataclass
 class TestGeneratorHealthCheck:
     """Health check result for test generator"""
+    __test__ = False
     pytest_available: bool
     coverage_available: bool
     last_run: Optional[str]
@@ -80,6 +83,8 @@ class TestGenerator:
     - Coverage threshold validation
     - Module-level coverage breakdown
     """
+
+    __test__ = False
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize test generator with optional configuration.
