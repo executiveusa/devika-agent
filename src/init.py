@@ -1,6 +1,7 @@
 import os
 from src.config import Config
 from src.logger import Logger
+from src.synthia.config_validation import validate_runtime_config
 
 
 def init_devika():
@@ -10,6 +11,13 @@ def init_devika():
     logger.info("checking configurations...")
     
     config = Config()
+    validation = validate_runtime_config(strict=os.getenv("SYNTHIA_STRICT_RUNTIME", "false").lower() == "true")
+    for warning in validation.warnings:
+        logger.warning(f"Runtime config warning: {warning}")
+    if not validation.ok:
+        for error in validation.errors:
+            logger.error(f"Runtime config error: {error}")
+        raise RuntimeError("Runtime configuration validation failed")
 
     sqlite_db = config.get_sqlite_db()
     screenshots_dir = config.get_screenshots_dir()

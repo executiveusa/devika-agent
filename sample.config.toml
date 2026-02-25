@@ -17,6 +17,7 @@ MISTRAL = "<YOUR_MISTRAL_API_KEY>"
 GROQ = "<YOUR_GROQ_API_KEY>"
 NETLIFY = "<YOUR_NETLIFY_API_KEY>"
 BRIGHTDATA_MCP = "<YOUR_BRIGHTDATA_MCP_API_KEY>"
+ARCHON_X_WEBHOOK_SECRET = ""
 
 [API_ENDPOINTS]
 BING = "https://api.bing.microsoft.com/v7.0/search"
@@ -27,6 +28,7 @@ LM_STUDIO = "http://localhost:1234/v1"
 OPENAI = "https://api.openai.com/v1"
 BRIGHTDATA_MCP = ""
 BRENNER_HTTP = ""
+ARCHON_X_WEBHOOK = ""
 
 
 [LOGGING]
@@ -57,3 +59,10 @@ FLYWHEEL_SETUP_URL = "https://github.com/Dicklesworthstone/agentic_coding_flywhe
 AGENT_FLYWHEEL_SITE = "https://agent-flywheel.com/"
 RALPHY_LOOP_ENABLED = "true"
 BRENNER_SIMULATE = "true"
+
+[SCHEDULER]
+ENABLED = "true"
+DB_PATH = "data/scheduler/jobs.sqlite"
+HEARTBEAT_SECONDS = 60
+MEMORY_SYNC_SECONDS = 300
+REPO_SCAN_SECONDS = 86400

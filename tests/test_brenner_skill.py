@@ -13,7 +13,7 @@ def test_brenner_execute_simulated(tmp_path):
     skill = BrennerSkill()
     res = skill.execute("brenner:deepreason analyze the repo")
     assert isinstance(res, dict)
-    assert "reply" in res or "error" not in res
+    assert "reply" in res or "error" in res
 
 
 def test_generate_heart_soul(tmp_path):

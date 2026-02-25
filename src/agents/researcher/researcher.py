@@ -39,9 +39,9 @@ class Researcher:
     def _capture_url_safe(self, url: str) -> str:
         """Capture a URL with mdwb if available; return markdown text or empty string."""
         result = md_browser.capture_url(url, out_dir="./tmp_mdwb")
-        if result and result.get("out_md"):
+        if result and getattr(result, "out_md", None):
             try:
-                with open(result["out_md"], "r", encoding="utf-8") as f:
+                with open(result.out_md, "r", encoding="utf-8") as f:
                     raw_md = f.read()
                 # Run ACIP on externally-sourced markdown before using it
                 check = acip.check_prompt(raw_md[:2000])

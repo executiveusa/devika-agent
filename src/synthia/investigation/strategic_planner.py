@@ -34,6 +34,7 @@ class TaskType(Enum):
     FEATURE = "feature"
     BUGFIX = "bugfix"
     REFACTOR = "refactor"
+    INTEGRATION = "integration"
     SECURITY = "security"
     PERFORMANCE = "performance"
     DOCUMENTATION = "documentation"
@@ -133,7 +134,7 @@ class StrategicPlanner:
     # Priority mapping based on task type
     TYPE_PRIORITY_MAP = {
         TaskType.SECURITY: TaskPriority.ARCHITECTURAL,
-        TaskType.REFRACTOR: TaskPriority.ARCHITECTURAL,
+        TaskType.REFACTOR: TaskPriority.ARCHITECTURAL,
         TaskType.INFRASTRUCTURE: TaskPriority.ARCHITECTURAL,
         TaskType.INTEGRATION: TaskPriority.INTEGRATION,
         TaskType.DEPENDENCY: TaskPriority.INTEGRATION,
@@ -306,7 +307,7 @@ class StrategicPlanner:
                     id=f"task-{task_id:03d}",
                     title=f"Architecture: {rec[:50]}...",
                     description=rec,
-                    task_type=TaskType.REFRACTOR,
+                    task_type=TaskType.REFACTOR,
                     priority=TaskPriority.ARCHITECTURAL,
                     dependencies=[],
                     affected_files=[],
@@ -679,7 +680,7 @@ class StrategicPlanner:
                 affected_components.add(component)
             
             # Track breaking changes
-            if task.task_type == TaskType.REFRACTOR:
+            if task.task_type == TaskType.REFACTOR:
                 breaking_changes.append(f"{task.title}: May affect existing functionality")
             
             # Track dependency changes

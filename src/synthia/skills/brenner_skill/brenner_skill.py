@@ -18,7 +18,14 @@ class BrennerSkill:
         if "brenner:deepreason" in text.lower():
             query = text.split("brenner:deepreason", 1)[1].strip()
             if self.adapter:
-                return self.adapter.send_query(query, stream=kwargs.get("stream", False))
+                try:
+                    return self.adapter.send_query(query, stream=kwargs.get("stream", False))
+                except Exception as exc:
+                    return {
+                        "error": str(exc),
+                        "source": "brenner",
+                        "query": query,
+                    }
             return {"reply": f"[Simulated Brenner] Deep reasoning on: {query}"}
 
         return {"error": "trigger not found"}

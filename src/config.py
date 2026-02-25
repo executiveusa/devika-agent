@@ -138,6 +138,27 @@ class Config:
     def get_brenner_http_endpoint(self) -> str:
         return self.config.get("API_ENDPOINTS", {}).get("BRENNER_HTTP", "")
 
+    def get_archon_webhook_url(self) -> str:
+        return self.config.get("API_ENDPOINTS", {}).get("ARCHON_X_WEBHOOK", "")
+
+    def get_archon_webhook_secret(self) -> str:
+        return self.config.get("API_KEYS", {}).get("ARCHON_X_WEBHOOK_SECRET", "")
+
+    def get_scheduler_enabled(self) -> bool:
+        return self.config.get("SCHEDULER", {}).get("ENABLED", "true") == "true"
+
+    def get_scheduler_db_path(self) -> str:
+        return self.config.get("SCHEDULER", {}).get("DB_PATH", "data/scheduler/jobs.sqlite")
+
+    def get_scheduler_heartbeat_seconds(self) -> int:
+        return int(self.config.get("SCHEDULER", {}).get("HEARTBEAT_SECONDS", 60))
+
+    def get_scheduler_memory_sync_seconds(self) -> int:
+        return int(self.config.get("SCHEDULER", {}).get("MEMORY_SYNC_SECONDS", 300))
+
+    def get_scheduler_repo_scan_seconds(self) -> int:
+        return int(self.config.get("SCHEDULER", {}).get("REPO_SCAN_SECONDS", 86400))
+
     def set_bing_api_key(self, key):
         self.config["API_KEYS"]["BING"] = key
         self.save_config()
